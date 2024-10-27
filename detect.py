@@ -5,6 +5,12 @@ import sys
 from pathlib import Path
 
 import torch
+import serial
+import time
+
+# Initialize serial communication (adjust 'COM3' to your port and baud rate to match Arduino)
+arduino = serial.Serial(port='/dev/cu.usbmodem141401', baudrate=9600, timeout=1)
+time.sleep(2)  # Wait for Arduino to initialize
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLO root directory
@@ -120,6 +126,7 @@ def run(
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
@@ -136,6 +143,14 @@ def run(
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f'{txt_path}.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
+
+                    # Send alert if object detected
+                    object_name = names[int(cls)]  # Get object name
+                    distance = ((xyxy[2] - xyxy[0]) * (xyxy[3] - xyxy[1])) ** 0.5  # Estimate object size or distance
+
+                    # Set condition for "obstacle" based on object type, confidence, or distance threshold
+                    if object_name in ['person', 'car', 'bicycle'] and distance < 50:  # Adjust threshold as needed
+                        arduino.write(b'Obstacle detected\n')  # Send alert to Arduino
 
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class

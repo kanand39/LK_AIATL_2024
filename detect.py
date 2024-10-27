@@ -9,7 +9,7 @@ import serial
 import time
 
 # Initialize serial communication (adjust 'COM3' to your port and baud rate to match Arduino)
-arduino = serial.Serial(port='/dev/cu.usbmodem141401', baudrate=9600, timeout=1)
+arduino = serial.Serial(port='/dev/cu.usbmodem141401', baudrate=9600)
 time.sleep(2)  # Wait for Arduino to initialize
 
 FILE = Path(__file__).resolve()
@@ -149,7 +149,7 @@ def run(
                     distance = ((xyxy[2] - xyxy[0]) * (xyxy[3] - xyxy[1])) ** 0.5  # Estimate object size or distance
 
                     # Set condition for "obstacle" based on object type, confidence, or distance threshold
-                    if object_name in ['person', 'car', 'bicycle'] and distance < 50:  # Adjust threshold as needed
+                    if object_name in ['person', 'persons', 'backpacks', 'tvs'] and distance < 500:  # Adjust threshold as needed
                         arduino.write(b'Obstacle detected\n')  # Send alert to Arduino
 
                     if save_img or save_crop or view_img:  # Add bbox to image
